@@ -4,5 +4,4 @@
 *.tsv
 *.txt
 /target
-Cargo.lock
 angelshark.toml
