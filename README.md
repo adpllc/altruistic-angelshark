@@ -1,8 +1,9 @@
 # Altruistic Angelshark
 
-![Conventional git style](https://img.shields.io/badge/git%20style-conventional%20commit-blue)
-
+![GitHub all releases](https://img.shields.io/github/downloads/adpllc/altruistic-angelshark/total)
+![GitHub](https://img.shields.io/github/license/adpllc/altruistic-angelshark)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/adpllc/altruistic-angelshark/Publish)
+![Conventional git style](https://img.shields.io/badge/git%20style-conventional%20commit-blue)
 
 Altruistic Angelshark is a project devoted to making Communication Manager (ACM)
 automation easier. It uses the OSSI protocol over SSH to run user commands on
