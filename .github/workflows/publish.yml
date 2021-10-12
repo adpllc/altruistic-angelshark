@@ -60,7 +60,9 @@ jobs:
 
       - name: Strip binaries
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-        run: strip target/${{ matrix.target }}/release/angelshark*
+        run:
+          strip target/${{ matrix.target }}/release/angelsharkcli && strip
+          target/${{ matrix.target }}/release/angelsharkd
 
       - name: Upload angelsharkcli nix binaries to release
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
