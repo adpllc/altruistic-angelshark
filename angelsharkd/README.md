@@ -1,15 +1,12 @@
 # `angelsharkd`
 
-This program listens for HTTP connections. It accepts OSSI commands in JSON
-format and returns OSSI output in JSON format. Below are examples of how to use
-the available endpoints.
+This program listens for HTTP requests. It accepts OSSI commands in JSON format
+and returns OSSI output in JSON format. Below are examples of how to use the
+available endpoints.
 
-## Endpoints
+## `GET /`: Current Running Version
 
-- `GET /` greeting and version number
-- `POST /ossi` run OSSI commands
-
-## Running Commands via `POST /ossi`
+## `POST /ossi` Run OSSI Command(s)
 
 Runs provided command(s) on configured ACM(s) and returns the results.
 
@@ -175,23 +172,20 @@ Here are some examples.
 ]
 ```
 
-### To Panic or Not to Panic (Query Strings)
+### `?panicky=true` Query Parameter for Error Handling
 
-This endpoint accepts a single query string in the form of `?panicky=true`. By
-default, any execution errors are simply filtered out of the output. This
-ensures that the output is always valid OSSI JSON. If you would rather get an
-error response for any Angelshark-related errors (not SAT errors), you can set
-this parameter.
-
-More examples.
+This endpoint accepts a query string in the form of `?panicky=true`. By default,
+any execution errors are simply filtered out of the output. This ensures that
+the output is always valid OSSI JSON. If you would rather get an error response
+for any Angelshark-related errors (not SAT errors), you can set this parameter.
 
 `POST /ossi`
 
 ```json
 [
   {
-    "acms": ["CM01"],
-    "command": "list stat nonexistent"
+    "acms": ["fake"],
+    "command": "list stat"
   }
 ]
 ```
@@ -207,24 +201,46 @@ More examples.
 ```json
 [
   {
-    "acms": ["CM01"],
-    "command": "list stat nonexistent"
+    "acms": ["fake"],
+    "command": "list stat"
   }
 ]
 ```
 
 `500 Internal Server Error`
 
-```plain
-Unable to execute command -- ACM didn't feel like it today....
+```json
+{
+  "reason": "Failed to open TCP stream to host. Make sure the config is correct and the host is otherwise reachable."
+}
 ```
+
+### `?no_cache=true` Query Parameter to Disable Caching
+
+By default, all responses are stored in a timed cache for thirty minutes. If you
+wish to bypass the cache (such as to validate the results of a recent change
+command), you can pass `?no_cache=true` as a query string parameter.
+
+Query parameters may be combined (ex. `?no_cache=true&panicky=true`).
+
+## Configuration
+
+`angelsharkd` can be configured with a variety of environment variables set at
+runtime.
+
+- `ANGELSHARKD_ORIGIN`: origin for CORS preflight requests. This is required in
+  release (not debug) mode.
+- `ANGELSHARKD_DEBUG`: enables debug mode. Extra logs will be written out and
+  CORS will be turned off.
+- `ANGELSHARKD_LOGINS`: override ACM logins file from `./asa.cfg`.
+- `ANGELSHARKD_ADDR`: override socket address to listen on. Takes the format
+  `127.0.0.1:8080`.
 
 ## Login Configuration
 
-See [`angelshark.toml.sample`](/samples/angelshark.toml.sample) to get an idea
-of how to configure `angelsharkd`.
+TODO:
 
 ## Logging
 
-`angelsharkd` writes standard access logs to STDOUT every time it responds to a
-request. Inner `libangelshark` errors may be written to STDOUT.
+`angelsharkd` continuously writes logs to STDERR. In debug mode, additional,
+potentially sensitive information is also logged, including request parameters.
