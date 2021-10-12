@@ -23,7 +23,13 @@ impl Config {
             .unwrap_or_else(|_| Ok(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 8080)))
             .with_context(|| "Failed to parse socket bind address.")?;
 
-        let origin = env::var("ANGELSHARKD_ORIGIN").unwrap_or_default();
+        let origin = if debug_mode {
+            String::new()
+        } else {
+            env::var("ANGELSHARKD_ORIGIN").with_context(|| {
+                "In release mode, CORS origin cannot be blank. Set ANGELSHARKD_ORIGIN"
+            })?
+        };
 
         let logins = if let Ok(path) = env::var("ANGELSHARKD_LOGINS") {
             File::open(path)
