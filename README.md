@@ -27,17 +27,17 @@ sure you're using (for example) `./angelsharkcli` for \*nix and
 ## Installation
 
 `angelsharkcli` is available as a prebuilt binary for many platforms in the
-GitHub releases. You may also build it from scratch with
+GitHub releases. To install `angelsharkcli` from source, use
 [`cargo`](https://rustup.rs):
 
-```sh
-cargo install --path angelsharkcli
+```
+cargo install --git https://github.com/adpllc/altruistic-angelshark.git angelsharkcli
 ```
 
-To build and install `angelsharkd`:
+To install `angelsharkd` from source:
 
-```sh
-cargo install --path angelsharkd
+```
+cargo install --git https://github.com/adpllc/altruistic-angelshark.git angelsharkd
 ```
 
 ## Quick Examples
