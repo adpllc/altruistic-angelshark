@@ -2,20 +2,20 @@
 
 [![Conventional git style](https://img.shields.io/badge/git%20style-conventional%20commit-blue)](https://conventionalcommits.org/)
 
-Angelshark is a collection of programs that make automating over Communication
-Managers (ACMs) easier. It uses the OSSI protocol over SSH to run user commands
-on one or more configurable ACMs. This functionality is exposed as a developer
-library (`libangelshark`), a command line application (`angelsharkcli`), and an
-HTTP daemon (`angelsharkd`).
+Altruistic Angelshark is a project devoted to making Communication Manager (ACM)
+automation easier. It uses the OSSI protocol over SSH to run user commands on
+one or more configurable ACMs. This functionality is exposed as a developer
+library ([`libangelshark`](./libangelshark)), a command line application
+([`angelsharkcli`](./angelsharkcli)), and an HTTP daemon
+([`angelsharkd`](./angelsharkd)).
 
 ## Detailed User Guides
 
-These guides give an overview of the end-user Angelshark programs, their
+These guides give an overview of the end-user Angelshark applications, their
 capabilities, and common use cases. It assumes the user has familiarity with
-using a shell and the command line. Some of the commands may be formatted for
-\*nix, others for Windows. They should all be directly translatable, just make
-sure you're using (for example) `./angelsharkcli` for \*nix and
-`./angelsharkcli.exe` for Windows.
+using a shell and the command line. Most commands are formatted for \*nix. They
+should all be directly translatable to Windows, just make sure you're using (for
+example) `angelsharkcli` for \*nix and `angelsharkcli.exe` for Windows.
 
 - [`angelsharkcli`](angelsharkcli/README.md): a command line application for
   running OSSI-formatted commands on one or more ACMs and parses the output data
@@ -45,78 +45,86 @@ cargo install --git https://github.com/adpllc/altruistic-angelshark.git angelsha
 Get the numbers and names of all stations on a single ACM via the CLI.
 
 ```sh
-$ printf 'aCM01\nclist stat\nf8005ff00\nf8003ff00\nt\n' | angelsharkcli print
-17571230001    Doe, Jane
-17571230002    Doe, John
-17571230003    Conference Rm. 1
+$ printf 'a03\nclist stat\nf8005ff00\nf8003ff00\nt\n' | angelsharkcli print
+17571230001    Arnold, Ray
+17571230002    Muldoon, Robert
+17571230003    Panic Rm. 1
 ```
 
 Check three ACMs for a station and print it as JSON via the CLI.
 
 ```sh
-$ angelsharkcli print <<EOF
-aCM01
-aCM02
-aCM03
-clist stat 17571230009
+$ angelsharkcli print --format json <<EOF
+a01
+a02
+a03
+clist stat 17571230000
 f8005ff00
 f8003ff00
 t
 EOF
-angelsharkcli: ossi: error: 1 00000000 29cf No records match the specified query options
-angelsharkcli: ossi: error: 1 00000000 29cf No records match the specified query options
 [
   [
-    "17571230009",
-    "Carpenter, Adam"
+    "17571230000",
+    "Nedry, Dennis",
   ]
 ]
+angelsharkcli: ossi (02): 1 00000000 29cf No records match the specified query options
+angelsharkcli: ossi (01): 1 00000000 29cf No records match the specified query options
 ```
 
-Do the same thing over HTTP via `curl`.
+Do the same thing over HTTP with `curl`.
 
 ```sh
 $ nohup angelsharkd &
 nohup: ignoring input and appending output to 'nohup.out'
-$ curl -X POST http://localhost:80/ossi \
-    -H 'Content-Type: application/json' \
-    -d '[
+$ curl -X POST http://localhost:8080/ossi -H 'Content-Type: application/json' -d '[
     {
-        "acms": [ "CM01", "CM02", "CM03" ],
-        "command": "list stat 17571230009",
-        "fields": ["8005ff00", "8003ff00"]
+        "acms": [
+            "lab",
+            "04",
+            "11"
+        ],
+        "command": "list stat 17576123489",
+        "fields": [
+            "8005ff00",
+            "8003ff00"
+        ]
     }
 ]'
 
 [
     {
-        "acm": "CM01",
-        "command": "list stat 17571230009",
+        "acm": "01",
+        "command": "list stat 17571230000",
+        "error": "1 00000000 29cf No records match the specified query options",
         "fields": [ "8005ff00", "8003ff00" ],
-        "datas": [ [ "17571230001", "Carpenter, Adam", ] ],
-        "error": ""
+        "datas": []
     },
     {
-        "acm": "CM02",
-        "command": "list stat 17571230001",
+        "acm": "03",
+        "command": "list stat 17571230000",
+        "error": "",
         "fields": [ "8005ff00", "8003ff00" ],
-        "datas": [ [] ],
-        "error": "1 00000000 29cf No records match the specified query options"
-    }
+        "datas": [
+            [
+                "17571230000",
+                "Nedry, Dennis"
+            ]
+        ]
+    },
     {
-        "acm": "CM03",
-        "command": "list stat 17571230001",
+        "acm": "02",
+        "command": "list stat 17571230000",
+        "error": "1 00000000 29cf No records match the specified query options",
         "fields": [ "8005ff00", "8003ff00" ],
-        "datas": [ [] ],
-        "error": "1 00000000 29cf No records match the specified query options"
+        "datas": []
     }
 ]
 
 $ cat nohup.out
-[2021-07-21T16:57:12Z INFO  angelsharkd] Reading config...
-[2021-07-21T16:57:12Z INFO  angelsharkd] Initializing command runner...
-[2021-07-21T16:57:12Z INFO  angelsharkd] Starting server...
-[2021-07-21T16:58:49Z INFO  angelsharkd::activity_log] {"status":"200 OK","method":"POST","uri":"/ossi","commands":[{"acms":["CM01","CM02","CM03"],"command":"list stat 17571230009","fields":["8005ff00","8003ff00"],"datas":null}]}
+[2021-10-12T19:34:55Z INFO  angelsharkd] Starting server on 127.0.0.1:8080 ...
+[2021-10-12T19:35:44Z INFO  warp::filters::log] 127.0.0.1:49366 "POST /ossi HTTP/1.1" 200 "-" "curl/7.71.1" 4.2123963s
 ```
 
 ## Why should I use Angelshark? Why might it be preferable to ASA or other projects?
