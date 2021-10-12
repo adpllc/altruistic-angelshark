@@ -1,0 +1,30 @@
+[package]
+name = "angelsharkd"
+version = "0.1.0"
+edition = "2018"
+authors = ["Adam T. Carpenter <adam.carpenter@adp.com>"]
+description = "A HTTP interface into one or more Communication Managers"
+
+[dependencies.libangelshark]
+path = "../libangelshark"
+
+[dependencies.tokio]
+version = "1"
+features = ["macros", "rt-multi-thread", "signal"]
+
+[dependencies.warp]
+version = "0.3"
+default-features = false
+
+[dependencies.log]
+version = "0.4"
+
+[dependencies.env_logger]
+version = "0.8"
+
+[dependencies.serde]
+version = "1"
+features = ["derive"]
+
+[dependencies.anyhow]
+version = "1"

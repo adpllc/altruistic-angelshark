@@ -1,0 +1,22 @@
+[package]
+name = "angelsharkcli"
+version = "0.1.0"
+edition = "2018"
+authors = ["Adam T. Carpenter <adam.carpenter@adp.com>"]
+description = "A command-line interface into one or more Communication Managers"
+
+[dependencies.libangelshark]
+path = "../libangelshark"
+
+[dependencies.csv]
+version = "1"
+
+[dependencies.serde_json]
+version = "1"
+
+[dependencies.clap]
+version = "2"
+default-features = false
+
+[dependencies.anyhow]
+version = "1"

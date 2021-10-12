@@ -1,0 +1,8 @@
+*.cfg
+*.csv
+*.json
+*.tsv
+*.txt
+/target
+Cargo.lock
+angelshark.toml

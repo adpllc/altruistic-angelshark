@@ -1,0 +1,21 @@
+[package]
+name = "libangelshark"
+version = "0.1.0"
+edition = "2018"
+authors = ["Adam T. Carpenter <adam.carpenter@adp.com>"]
+description = "A Communication Manager automation library and command runner."
+
+[dependencies.anyhow]
+version = "1"
+
+[dependencies.rayon]
+version = "1"
+
+[dependencies.ssh2]
+version = "0.9"
+features = ["vendored-openssl"]
+
+[dependencies.cached]
+version = "0.25"
+default-features = false
+features = ["proc_macro"]
