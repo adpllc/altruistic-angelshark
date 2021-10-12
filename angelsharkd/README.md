@@ -6,7 +6,18 @@ available endpoints.
 
 ## `GET /` Current Running Version
 
-TODO:
+Returns the current running version of Angelshark.
+
+```
+GET /
+```
+
+```json
+200 OK
+{
+    "daemon_version": "0.1.0"
+}
+```
 
 ## `POST /ossi` Run OSSI Command(s)
 
