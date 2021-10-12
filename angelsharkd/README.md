@@ -4,7 +4,9 @@ This program listens for HTTP requests. It accepts OSSI commands in JSON format
 and returns OSSI output in JSON format. Below are examples of how to use the
 available endpoints.
 
-## `GET /`: Current Running Version
+## `GET /` Current Running Version
+
+TODO:
 
 ## `POST /ossi` Run OSSI Command(s)
 
@@ -30,19 +32,10 @@ Request Template:
 
 ```json
 {
-    "acms": [
-        "<configured ACM name>",
-        ...
-    ],
-    "command": "<command to be run>",
-    "fields": [
-        "<optional field hex address>",
-        ...
-    ],
-    "datas": [
-        "<optional replacement data>",
-        ...
-    ]
+  "acms": ["<configured ACM name>", "..."],
+  "command": "<command to be run>",
+  "fields": ["<optional field hex address>", "..."],
+  "datas": ["<optional replacement data>", "..."]
 }
 ```
 
@@ -63,45 +56,34 @@ Response Template:
 
 ```json
 [
-    {
-        "acm": "<ACM command was run on>",
-        "command": "<command that was run>",
-        "fields": [
-            "<field hex address>",
-            ...
-        ],
-        "datas": [
-            [
-                "<entry data>",
-                ...
-            ],
-            ...
-        ],
-        "error": ""
-    }
+  {
+    "acm": "<ACM command was run on>",
+    "command": "<command that was run>",
+    "fields": ["<field hex address>", "..."],
+    "datas": [["<entry data>", "..."], "..."],
+    "error": ""
+  }
 ]
 ```
 
 Here are some examples.
 
-`POST /ossi`
-
 ```json
-[
-  {
-    "acms": ["CM01"],
-    "command": "list stat 17571230009"
-  }
-]
+POST /
+  ossi[
+    {
+      "acms": ["CM01"],
+      "command": "list stat 17571230000"
+    }
+  ]
 ```
 
-`200 OK`
-
 ```json
+200 OK
 [
   {
     "acm": "CM01",
-    "command": "list stat 17571230009",
+    "command": "list stat 17571230000",
     "fields": [
       "8005ff00",
       "8004ff00",
@@ -145,22 +127,20 @@ Here are some examples.
 ]
 ```
 
-`POST /ossi`
-
 ```json
-[
-  {
-    "acms": ["CM01"],
-    "command": "cha stat 17571230000",
-    "fields": ["8003ff00"],
-    "datas": ["Carpenter, Adam T."]
-  }
-]
+POST /
+  ossi[
+    {
+      "acms": ["CM01"],
+      "command": "cha stat 17571230000",
+      "fields": ["8003ff00"],
+      "datas": ["Carpenter, Adam T."]
+    }
+  ]
 ```
 
-`200 OK`
-
 ```json
+200 OK
 [
   {
     "acm": "CM01",
@@ -179,26 +159,23 @@ any execution errors are simply filtered out of the output. This ensures that
 the output is always valid OSSI JSON. If you would rather get an error response
 for any Angelshark-related errors (not SAT errors), you can set this parameter.
 
-`POST /ossi`
-
 ```json
-[
-  {
-    "acms": ["fake"],
-    "command": "list stat"
-  }
-]
+POST /
+  ossi[
+    {
+      "acms": ["fake"],
+      "command": "list stat"
+    }
+  ]
 ```
 
-`200 OK`
-
 ```json
+200 OK
 []
 ```
 
-`POST /ossi?panicky=true`
-
 ```json
+POST /ossi?panicky=true
 [
   {
     "acms": ["fake"],
@@ -207,9 +184,8 @@ for any Angelshark-related errors (not SAT errors), you can set this parameter.
 ]
 ```
 
-`500 Internal Server Error`
-
 ```json
+500 Internal Server Error
 {
   "reason": "Failed to open TCP stream to host. Make sure the config is correct and the host is otherwise reachable."
 }
