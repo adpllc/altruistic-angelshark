@@ -46,7 +46,7 @@ jobs:
           override: true
           target: ${{ matrix.target }}
 
-      - name: Build
+      - name: Build angelsharkcli
         uses: actions-rs/cargo@v1
         with:
           use-cross: ${{ matrix.use-cross }}
@@ -54,11 +54,19 @@ jobs:
           args:
             --target ${{ matrix.target }} --release --locked --bin angelsharkcli
 
-      - name: Strip binary
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-        run: strip target/${{ matrix.target }}/release/angelsharkcli
+      - name: Build angelsharkd
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.use-cross }}
+          command: build
+          args:
+            --target ${{ matrix.target }} --release --locked --bin angelsharkd
 
-      - name: Upload nix binaries to release
+      - name: Strip binaries
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+        run: strip target/${{ matrix.target }}/release/angelshark*
+
+      - name: Upload angelsharkcli nix binaries to release
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         uses: svenstaro/upload-release-action@v1-release
         with:
@@ -69,7 +77,18 @@ jobs:
             }}
           tag: ${{ github.ref }}
 
-      - name: Upload Windows binaries to release
+      - name: Upload angelsharkd nix binaries to release
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/release/angelsharkd
+          asset_name:
+            angelsharkd-${{ steps.version.outputs.VERSION }}-${{ matrix.target
+            }}
+          tag: ${{ github.ref }}
+
+      - name: Upload angelsharkcli Windows binaries to release
         if: matrix.os == 'windows-latest'
         uses: svenstaro/upload-release-action@v1-release
         with:
@@ -77,5 +96,16 @@ jobs:
           file: target/${{ matrix.target }}/release/angelsharkcli.exe
           asset_name:
             angelsharkcli-${{ steps.version.outputs.VERSION }}-${{ matrix.target
+            }}.exe
+          tag: ${{ github.ref }}
+
+      - name: Upload angelsharkd binaries to release
+        if: matrix.os == 'windows-latest'
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/release/angelsharkd.exe
+          asset_name:
+            angelsharkd-${{ steps.version.outputs.VERSION }}-${{ matrix.target
             }}.exe
           tag: ${{ github.ref }}
