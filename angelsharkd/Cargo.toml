@@ -1,6 +1,6 @@
 [package]
 name = "angelsharkd"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Adam T. Carpenter <adam.carpenter@adp.com>"]
 description = "A HTTP interface into one or more Communication Managers"
