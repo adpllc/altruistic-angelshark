@@ -1,7 +1,7 @@
 [package]
 name = "angelsharkcli"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 authors = ["Adam T. Carpenter <adam.carpenter@adp.com>"]
 description = "A command-line interface into one or more Communication Managers"
 
