@@ -13,7 +13,7 @@
 - A text editor; any will do, but if you use VSCode, it will ask if you want the
   recommended extensions for this project
 - [The Rust Toolchain and `cargo`](https://rustup.rs)
-- GNU Make (optional but helpful)
+- `make(1)`
 
 To compile:
 
