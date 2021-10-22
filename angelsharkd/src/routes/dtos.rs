@@ -22,7 +22,7 @@ pub struct Request {
     pub acms: Vec<String>,
     pub command: String,
     pub fields: Option<Vec<String>>,
-    pub datas: Option<Vec<Vec<String>>>,
+    pub datas: Option<Vec<String>>,
 }
 
 impl From<Request> for Vec<(String, Message)> {
@@ -35,7 +35,7 @@ impl From<Request> for Vec<(String, Message)> {
                     Message {
                         command: val.command.clone(),
                         fields: val.fields.clone(),
-                        datas: val.datas.clone(),
+                        datas: val.datas.clone().map(|d| vec![d]),
                         error: None,
                     },
                 )
