@@ -24,33 +24,40 @@ pub fn search(config: &Config) -> impl Filter<Extract = impl Reply, Error = Reje
         .and_then(handle_simple_search)
 }
 
-pub fn refresh() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn refresh(config: &Config) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    let runner = config.runner.clone();
     path!("search" / "refresh")
         .and(get())
+        .and(with_runner(runner))
         .and_then(handle_refresh)
 }
 
-async fn handle_refresh() -> Result<impl Reply, Infallible> {
-    fetch(String::from("test"), true);
-    Ok("")
+async fn handle_refresh(runner: AcmRunner) -> Result<impl Reply, Infallible> {
+    get_extensions_cached(true);
+    Ok("Refresh scheduled")
 }
 
 async fn handle_simple_search(terms: Terms, runner: AcmRunner) -> Result<impl Reply, Infallible> {
-    Ok(fetch(terms[0].clone(), false))
+    Ok(get_extensions_cached(false))
 }
 
 #[cached]
-fn fetch(param: String, refresh: bool) -> String {
+fn get_extensions_cached(refresh: bool) -> String {
     if refresh {
-        let param = param.clone();
         tokio::spawn(async move {
             std::thread::sleep_ms(10000);
-            let mut handle = FETCH.lock().unwrap();
-            handle.cache_clear();
-            handle.cache_set((param.clone(), false), format!("blargh {}", param.clone()));
-            eprintln!("evicted");
+
+            if let Ok(mut handle) = GET_EXTENSIONS_CACHED.lock() {
+                handle.cache_clear();
+                handle.cache_set(false, String::from("fresh"));
+                eprintln!("evicted");
+            }
         });
     }
 
-    param
+    String::from("stale")
+}
+
+fn get_extensions(runner: AcmRunner) {
+    todo!()
 }
