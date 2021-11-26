@@ -1,16 +1,19 @@
 use crate::{config::Config, routes::with_runner};
-use cached::proc_macro::cached;
 use libangelshark::AcmRunner;
-use std::convert::Infallible;
+use once_cell::sync::Lazy;
+use std::{
+    convert::Infallible,
+    sync::{Arc, Mutex},
+};
 use warp::{
     body::{content_length_limit, json},
     get, path, post, Filter, Rejection, Reply,
 };
 
-const CMD_LIST_EXT: &str = "list extension-type";
-const CMD_LIST_STAT: &str = "list station";
+static HAYSTACK_CACHE: Lazy<Haystack> = Lazy::new(Haystack::new);
 
-type Terms = Vec<String>;
+/// Collection of search terms
+type Needle = Vec<String>;
 
 pub fn search(config: &Config) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     let runner = config.runner.clone();
@@ -19,9 +22,9 @@ pub fn search(config: &Config) -> impl Filter<Extract = impl Reply, Error = Reje
     path("search")
         .and(post())
         .and(content_length_limit(1024 * 16))
-        .and(json::<Terms>())
+        .and(json::<Needle>())
         .and(with_runner(runner))
-        .and_then(handle_simple_search)
+        .and_then(handle_search)
 }
 
 pub fn refresh(config: &Config) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -32,32 +35,41 @@ pub fn refresh(config: &Config) -> impl Filter<Extract = impl Reply, Error = Rej
         .and_then(handle_refresh)
 }
 
+async fn handle_search(terms: Needle, runner: AcmRunner) -> Result<impl Reply, Infallible> {
+    HAYSTACK_CACHE.search(Vec::new());
+    Ok("")
+}
+
 async fn handle_refresh(runner: AcmRunner) -> Result<impl Reply, Infallible> {
-    get_extensions_cached(true);
+    HAYSTACK_CACHE.refresh();
     Ok("Refresh scheduled")
 }
 
-async fn handle_simple_search(terms: Terms, runner: AcmRunner) -> Result<impl Reply, Infallible> {
-    Ok(get_extensions_cached(false))
+/// A lazy-loaded, asynchronously-refreshed exension-type haystack cache.
+struct Haystack {
+    inner: Arc<Mutex<String>>,
 }
 
-#[cached]
-fn get_extensions_cached(refresh: bool) -> String {
-    if refresh {
-        tokio::spawn(async move {
-            std::thread::sleep_ms(10000);
+impl Haystack {
+    fn new() -> Self {
+        Self {
+            inner: Arc::new(Mutex::new(String::with_capacity(0))),
+        }
+    }
 
-            if let Ok(mut handle) = GET_EXTENSIONS_CACHED.lock() {
-                handle.cache_clear();
-                handle.cache_set(false, String::from("fresh"));
+    pub fn search(&self, needle: Needle) -> String {
+        (*self.inner.lock().unwrap()).clone()
+    }
+
+    pub fn refresh(&self) {
+        let inner = self.inner.clone();
+        tokio::spawn(async move {
+            std::thread::sleep_ms(10000); // slow generation here
+
+            if let Ok(mut handle) = inner.lock() {
+                *handle = String::from("fresh");
                 eprintln!("evicted");
             }
         });
     }
-
-    String::from("stale")
-}
-
-fn get_extensions(runner: AcmRunner) {
-    todo!()
 }
