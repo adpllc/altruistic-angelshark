@@ -41,6 +41,9 @@ async fn main() -> Result<()> {
         })
         .with(warp::log("angelsharkd"));
 
+    #[cfg(feature = "extensions")]
+    let routes = routes.or(routes::extensions::filter(&config));
+
     // Create server with shutdown signal.
     let (addr, server) = warp::serve(routes).bind_with_graceful_shutdown(config.bind_addr, async {
         signal::ctrl_c()
