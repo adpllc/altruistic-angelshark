@@ -13,7 +13,9 @@ pub fn filter(config: &Config) -> impl Filter<Extract = impl Reply, Error = Reje
     let filters = default().or(default());
 
     #[cfg(feature = "simple_search")]
-    let filters = filters.or(simple_search::filter());
+    let filters = filters
+        .or(simple_search::search(config))
+        .or(simple_search::refresh());
 
     #[cfg(feature = "simple_deprov")]
     let filters = filters.or(simple_deprov::filter());

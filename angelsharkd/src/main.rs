@@ -30,6 +30,7 @@ async fn main() -> Result<()> {
 
     let routes = routes::index()
         .or(routes::ossi(&config))
+        .or(routes::extensions::filter(&config))
         .with(if config.debug_mode || config.origin == "*" {
             warp::cors()
                 .allow_any_origin()
@@ -40,9 +41,6 @@ async fn main() -> Result<()> {
                 .allow_methods(&[Method::GET, Method::POST])
         })
         .with(warp::log("angelsharkd"));
-
-    #[cfg(feature = "extensions")]
-    let routes = routes.or(routes::extensions::filter(&config));
 
     // Create server with shutdown signal.
     let (addr, server) = warp::serve(routes).bind_with_graceful_shutdown(config.bind_addr, async {

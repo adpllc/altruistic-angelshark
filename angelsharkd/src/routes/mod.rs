@@ -13,7 +13,6 @@ use warp::{
 };
 
 mod dtos;
-#[cfg(feature = "extensions")]
 pub mod extensions;
 
 /// GET / -> Name and version # of app.

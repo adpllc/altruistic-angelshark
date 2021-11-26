@@ -27,6 +27,7 @@ name = "angelsharkd"
 version = "0.2.0"
 dependencies = [
  "anyhow",
+ "cached",
  "env_logger",
  "libangelshark",
  "log",
