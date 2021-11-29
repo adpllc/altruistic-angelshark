@@ -30,7 +30,6 @@ dependencies = [
  "env_logger",
  "libangelshark",
  "log",
- "once_cell",
  "serde",
  "tokio",
  "warp",

@@ -6,7 +6,7 @@ authors = ["Adam T. Carpenter <adam.carpenter@adp.com>"]
 description = "A HTTP interface into one or more Communication Managers"
 
 [features]
-simple_search = ["once_cell"]
+simple_search = []
 simple_deprov = []
 
 [dependencies.libangelshark]
@@ -31,8 +31,4 @@ version = "1"
 features = ["derive"]
 
 [dependencies.anyhow]
-version = "1"
-
-[dependencies.once_cell]
-optional = true
 version = "1"

@@ -1,6 +1,4 @@
-use crate::{config::Config, routes::with_runner};
 use libangelshark::AcmRunner;
-use once_cell::sync::Lazy;
 use std::{
     convert::Infallible,
     sync::{Arc, Mutex},
@@ -10,55 +8,56 @@ use warp::{
     get, path, post, Filter, Rejection, Reply,
 };
 
-static HAYSTACK_CACHE: Lazy<Haystack> = Lazy::new(Haystack::new);
-
 /// Collection of search terms
 type Needle = Vec<String>;
 
-pub fn search(config: &Config) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    let runner = config.runner.clone();
-    // TODO: anti-caching headers on resp?
+pub fn search(haystack: Haystack) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    // TODO: discourage caching response thru headers
 
     path("search")
         .and(post())
         .and(content_length_limit(1024 * 16))
-        .and(json::<Needle>())
-        .and(with_runner(runner))
-        .and_then(handle_search)
+        .and(json())
+        .and_then(move |terms: Needle| handle_search(haystack.clone(), terms))
 }
 
-pub fn refresh(config: &Config) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    let runner = config.runner.clone();
+pub fn refresh(
+    runner: AcmRunner,
+    haystack: Haystack,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     path!("search" / "refresh")
         .and(get())
-        .and(with_runner(runner))
-        .and_then(handle_refresh)
+        .and_then(move || handle_refresh(haystack.clone(), runner.clone()))
 }
 
-async fn handle_search(terms: Needle, runner: AcmRunner) -> Result<impl Reply, Infallible> {
-    HAYSTACK_CACHE.search(Vec::new());
-    Ok("")
+async fn handle_search(haystack: Haystack, needle: Needle) -> Result<impl Reply, Infallible> {
+    Ok(haystack.search(Vec::new()))
 }
 
-async fn handle_refresh(runner: AcmRunner) -> Result<impl Reply, Infallible> {
-    HAYSTACK_CACHE.refresh();
+async fn handle_refresh(haystack: Haystack, runner: AcmRunner) -> Result<impl Reply, Infallible> {
+    haystack.refresh();
     Ok("Refresh scheduled")
 }
 
 /// A lazy-loaded, asynchronously-refreshed exension-type haystack cache.
-struct Haystack {
+#[derive(Clone)]
+pub struct Haystack {
     inner: Arc<Mutex<String>>,
 }
 
 impl Haystack {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             inner: Arc::new(Mutex::new(String::with_capacity(0))),
         }
     }
 
     pub fn search(&self, needle: Needle) -> String {
-        (*self.inner.lock().unwrap()).clone()
+        if let Ok(matches) = self.inner.lock() {
+            matches.clone()
+        } else {
+            String::from("stale")
+        }
     }
 
     pub fn refresh(&self) {
