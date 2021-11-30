@@ -9,8 +9,10 @@ use std::{
 use warp::{
     body::{content_length_limit, json},
     get,
-    hyper::StatusCode,
-    path, post, reply, Filter, Rejection, Reply,
+    hyper::{header, StatusCode},
+    path, post,
+    reply::{self, with},
+    Filter, Rejection, Reply,
 };
 
 /// Collection of search terms
@@ -20,13 +22,14 @@ type Needles = Vec<String>;
 type HaystackEntries = Vec<Vec<String>>;
 
 pub fn search(haystack: Haystack) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    // TODO: discourage caching response thru headers
-
     path("search")
         .and(post())
         .and(content_length_limit(1024 * 16))
         .and(json())
         .and_then(move |terms: Needles| handle_search(haystack.to_owned(), terms))
+        .with(with::header(header::PRAGMA, "no-cache"))
+        .with(with::header(header::CACHE_CONTROL, "no-store, max-age=0"))
+        .with(with::header(header::X_FRAME_OPTIONS, "DENY"))
 }
 
 pub fn refresh(haystack: Haystack) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
