@@ -60,6 +60,7 @@ impl Haystack {
     /// Refreshes the haystack data by running relevant commands on a runner,
     /// parsing the results, and updating the entries field with the fresh data.
     /// TODO: Do we want simultaneous refreshes to be possible?
+    /// TODO: The entry generation could probably be simplified and the number of clones reduced.
     pub fn refresh(&self) -> Result<(), Error> {
         let mut runner = self.runner.to_owned();
 
