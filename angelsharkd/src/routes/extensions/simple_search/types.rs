@@ -1,69 +1,25 @@
 use anyhow::{anyhow, Context, Error};
 use libangelshark::{AcmRunner, Message, ParallelIterator};
-use log::{error, info};
+use log::error;
 use std::{
     collections::HashMap,
-    convert::Infallible,
+    env,
     sync::{Arc, Mutex},
 };
-use warp::{
-    body::{content_length_limit, json},
-    get,
-    hyper::{header, StatusCode},
-    path, post,
-    reply::{self, with},
-    Filter, Rejection, Reply,
-};
+
+const ANGELSHARKD_EXT_SEARCH_ACMS: &str = "ANGELSHARKD_EXT_SEARCH_ACMS";
+const OSSI_STAT_NUMBER_FIELD: &str = "8005ff00";
+const OSSI_STAT_ROOM_FIELD: &str = "0031ff00";
+const OSSI_LIST_STAT_CMD: &str = "list station";
+const OSSI_LIST_EXT_CMD: &str = "list extension-type";
 
 /// Collection of search terms
-type Needles = Vec<String>;
+pub type Needles = Vec<String>;
 
 /// Collection of ACM extension types with ROOMs (if applicable) and ACM names
 type HaystackEntries = Vec<Vec<String>>;
 
-pub fn search(haystack: Haystack) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    path("search")
-        .and(post())
-        .and(content_length_limit(1024 * 16))
-        .and(json())
-        .and_then(move |terms: Needles| handle_search(haystack.to_owned(), terms))
-        .with(with::header(header::PRAGMA, "no-cache"))
-        .with(with::header(header::CACHE_CONTROL, "no-store, max-age=0"))
-        .with(with::header(header::X_FRAME_OPTIONS, "DENY"))
-}
-
-pub fn refresh(haystack: Haystack) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    path!("search" / "refresh")
-        .and(get())
-        .and_then(move || handle_refresh(haystack.to_owned()))
-}
-
-async fn handle_search(haystack: Haystack, needle: Needles) -> Result<impl Reply, Infallible> {
-    // Ok(haystack.search(Vec::new())?)
-    // if let Ok(matches = haystack.search(needle);
-    match haystack.search(needle) {
-        Ok(matches) => Ok(reply::with_status(reply::json(&matches), StatusCode::OK)),
-        Err(e) => Ok(reply::with_status(
-            reply::json(&e.to_string()),
-            StatusCode::INTERNAL_SERVER_ERROR,
-        )),
-    }
-}
-
-async fn handle_refresh(haystack: Haystack) -> Result<impl Reply, Infallible> {
-    // Run refresh as a background task and immediately return.
-    tokio::spawn(async move {
-        if let Err(e) = haystack.refresh() {
-            error!("{}", e.to_string()); // TODO: use logger
-        } else {
-            info!("Search haystack refreshed.");
-        }
-    });
-
-    Ok("Refresh scheduled")
-}
-
-/// A lazy-loaded, asynchronously-refreshed exension-type haystack cache.
+/// Represents a searchable, refreshable collection of ACM extension data.
 #[derive(Clone)]
 pub struct Haystack {
     entries: Arc<Mutex<HaystackEntries>>,
@@ -78,6 +34,7 @@ impl Haystack {
         }
     }
 
+    /// Searches for haystack entries that contain all given needles and returns them.
     pub fn search(&self, needles: Needles) -> Result<HaystackEntries, Error> {
         let needles: Vec<_> = needles.iter().map(|n| n.to_lowercase()).collect();
 
@@ -100,20 +57,32 @@ impl Haystack {
         Ok(matches)
     }
 
+    /// Refreshes the haystack data by running relevant commands on a runner,
+    /// parsing the results, and updating the entries field with the fresh data.
+    /// TODO: Do we want simultaneous refreshes to be possible?
     pub fn refresh(&self) -> Result<(), Error> {
-        let mut runner = self.runner.to_owned(); // TODO: This alone allows multiple refreshers to be run at once. Do we want that?
+        let mut runner = self.runner.to_owned();
 
         // Queue jobs in ACM runner
-        for acm in &[
-            "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11",
-        ] {
+        let configured_acms = env::var(ANGELSHARKD_EXT_SEARCH_ACMS).with_context(|| {
+            format!(
+                "{} var missing. Cannot refresh haystack.",
+                ANGELSHARKD_EXT_SEARCH_ACMS
+            )
+        })?;
+
+        // Generate jobs and queue on runner.
+        for acm in configured_acms.split_whitespace() {
             runner
-                .queue_input(acm, &Message::new("list extension-type"))
+                .queue_input(acm, &Message::new(OSSI_LIST_EXT_CMD))
                 .queue_input(
                     acm,
                     &Message {
-                        command: String::from("list station"),
-                        fields: Some(vec![String::from("8005ff00"), String::from("0031ff00")]),
+                        command: String::from(OSSI_LIST_STAT_CMD),
+                        fields: Some(vec![
+                            String::from(OSSI_STAT_NUMBER_FIELD),
+                            String::from(OSSI_STAT_ROOM_FIELD),
+                        ]),
                         datas: None,
                         error: None,
                     },
@@ -149,7 +118,7 @@ impl Haystack {
             .map(|(_, messages)| {
                 messages
                     .iter()
-                    .filter(|message| message.command == "list station")
+                    .filter(|message| message.command == OSSI_LIST_STAT_CMD)
                     .filter_map(|message| message.datas.to_owned())
                     .flatten()
                     .filter_map(|stat| Some((stat.get(0)?.to_owned(), stat.get(1)?.to_owned())))
@@ -166,7 +135,7 @@ impl Haystack {
 
                 messages
                     .into_iter()
-                    .filter(|message| message.command == "list extension-type")
+                    .filter(|message| message.command == OSSI_LIST_EXT_CMD)
                     .filter_map(|message| message.datas)
                     .flatten()
                     .map(move |mut extension| {
@@ -185,7 +154,7 @@ impl Haystack {
             .flatten()
             .collect();
 
-        // Propogate the new data to the shared haystack entries
+        // Overwrite shared haystack entries with new data.
         let mut lock = self
             .entries
             .lock()
