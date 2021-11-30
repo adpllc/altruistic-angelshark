@@ -1,5 +1,3 @@
-use std::sync::{Arc, Mutex};
-
 use crate::config::Config;
 use warp::{path, Filter, Rejection, Reply};
 
@@ -15,13 +13,11 @@ pub fn filter(config: &Config) -> impl Filter<Extract = impl Reply, Error = Reje
     let filters = default().or(default());
 
     #[cfg(feature = "simple_search")]
-    let runner = config.runner.clone();
-    #[cfg(feature = "simple_search")]
-    let haystack = simple_search::Haystack::new();
+    let haystack = simple_search::Haystack::new(config.runner.clone());
     #[cfg(feature = "simple_search")]
     let filters = filters
         .or(simple_search::search(haystack.clone()))
-        .or(simple_search::refresh(runner, haystack));
+        .or(simple_search::refresh(haystack));
 
     #[cfg(feature = "simple_deprov")]
     let filters = filters.or(simple_deprov::filter());
