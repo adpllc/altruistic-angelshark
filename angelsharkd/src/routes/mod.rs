@@ -13,6 +13,7 @@ use warp::{
 };
 
 mod dtos;
+pub mod extensions;
 
 /// GET / -> Name and version # of app.
 pub fn index() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {

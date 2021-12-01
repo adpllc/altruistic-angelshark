@@ -30,6 +30,7 @@ async fn main() -> Result<()> {
 
     let routes = routes::index()
         .or(routes::ossi(&config))
+        .or(routes::extensions::filter(&config))
         .with(if config.debug_mode || config.origin == "*" {
             warp::cors()
                 .allow_any_origin()

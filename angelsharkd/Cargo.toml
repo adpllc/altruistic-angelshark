@@ -1,9 +1,13 @@
 [package]
 name = "angelsharkd"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2021"
 authors = ["Adam T. Carpenter <adam.carpenter@adp.com>"]
 description = "A HTTP interface into one or more Communication Managers"
+
+[features]
+simple_search = []
+simple_deprov = []
 
 [dependencies.libangelshark]
 path = "../libangelshark"
@@ -20,7 +24,7 @@ default-features = false
 version = "0.4"
 
 [dependencies.env_logger]
-version = "0.8"
+version = "0.9"
 
 [dependencies.serde]
 version = "1"

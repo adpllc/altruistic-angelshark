@@ -80,8 +80,8 @@ Response Template:
 Here are some examples.
 
 ```json
-POST /
-  ossi[
+POST /ossi
+  [
     {
       "acms": ["CM01"],
       "command": "list stat 17571230000"
