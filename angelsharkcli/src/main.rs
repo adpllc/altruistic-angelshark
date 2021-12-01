@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Error, Result};
+use anyhow::{Context, Error, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use csv::{QuoteStyle, WriterBuilder};
 use libangelshark::{Acm, AcmRunner, Message, ParallelIterator};
@@ -29,10 +29,7 @@ fn main() -> Result<()> {
             AcmRunner::new(acms, inputs)
                 .manuals()
                 .for_each(|(name, output)| match output {
-                    Err(e) => eprintln!(
-                        "{}",
-                        anyhow!(e).context(format!("angelsharkcli: manual ({})", name))
-                    ),
+                    Err(e) => eprintln!("angelsharkcli: manual ({}): {}", name, e),
                     Ok(o) => println!("{}", o),
                 });
         }
@@ -128,19 +125,12 @@ fn main() -> Result<()> {
                 .run()
                 .for_each(|(name, output)| match output {
                     Err(e) => {
-                        eprintln!(
-                            "{}",
-                            anyhow!(e).context(format!("angelsharkcli: runner ({})", name))
-                        );
+                        eprintln!("angelsharkcli: runner ({}): {}", name, e);
                     }
                     Ok(o) => {
                         for msg in o {
                             if let Some(e) = msg.error {
-                                eprintln!(
-                                    "{}",
-                                    anyhow!(e)
-                                        .context(format!("angelsharkcli: ossi ({})", name))
-                                );
+                                eprintln!("angelsharkcli: ossi ({}): {}", name, e);
                             }
                         }
                     }
