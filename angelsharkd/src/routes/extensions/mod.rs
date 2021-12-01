@@ -8,7 +8,7 @@ mod simple_search;
 
 /// The extension filter; consists of all compiled optional Angelshark extension
 /// filters combined under `/extensions`.
-pub fn filter(config: &Config) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn filter(_config: &Config) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     // Note: this next line deals with the common edge case of having no
     // extensions loaded with feature flags. It ensures that the the type
     // checking is right when the return `.and()` is called below.
@@ -17,7 +17,7 @@ pub fn filter(config: &Config) -> impl Filter<Extract = impl Reply, Error = Reje
     // Block to enable simple_search extension feature. Instantiates a
     // searchable haystack and configures filters to handle search requests.
     #[cfg(feature = "simple_search")]
-    let haystack = simple_search::Haystack::new(config.runner.clone());
+    let haystack = simple_search::Haystack::new(_config.runner.clone());
     #[cfg(feature = "simple_search")]
     let filters = filters
         .or(simple_search::search_filter(haystack.clone()))
