@@ -8,6 +8,16 @@ This functionality may not be desirable for all end users, and therefore is
 completely opt-in with feature flags. For example, at compile time, you can add
 `--features simple_search` to enable a given extension called `simple_search`.
 
+```
+cargo build --release --bin angelsharkd --features simple_search
+```
+
+or
+
+```
+cargo install --path angelsharkd --features simple_search
+```
+
 To add additional features, read `mod.rs` and `Cargo.toml` for `angelsharkd` to
 see how to conditionally incorporate your own warp HTTP filters into the
 project.
