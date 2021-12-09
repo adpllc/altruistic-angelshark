@@ -21,7 +21,7 @@ pub fn search_filter(
         .and(post())
         .and(content_length_limit(1024 * 16))
         .and(json())
-        .and_then(move |terms: Needles| search(haystack.to_owned(), terms))
+        .and_then(move |needles: Needles| search(haystack.to_owned(), needles))
         .with(with::header(header::PRAGMA, "no-cache"))
         .with(with::header(header::CACHE_CONTROL, "no-store, max-age=0"))
         .with(with::header(header::X_FRAME_OPTIONS, "DENY"))
@@ -39,8 +39,6 @@ pub fn refresh_filter(
 /// Runs the search request to find all needles in the haystack and converts the
 /// results into a reply.
 async fn search(haystack: Haystack, needles: Needles) -> Result<impl Reply, Infallible> {
-    // Ok(haystack.search(Vec::new())?)
-    // if let Ok(matches = haystack.search(needle);
     match haystack.search(needles) {
         Ok(matches) => Ok(reply::with_status(reply::json(&matches), StatusCode::OK)),
         Err(e) => Ok(reply::with_status(
