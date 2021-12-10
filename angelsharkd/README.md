@@ -225,7 +225,11 @@ runtime.
 
 ## Login Configuration
 
-TODO:
+`angelsharkd` uses the same login configuration file syntax as `angelsharkcli`.
+See the
+[`angelsharkcli` README for more information](/angelsharkcli/README.md#login-configuration).
+
+You can download a [sample `asa.cfg.sample`](/asa.cfg.sample) to start with.
 
 ## Logging
 
