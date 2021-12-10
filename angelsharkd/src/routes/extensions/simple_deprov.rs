@@ -1,4 +1,5 @@
 use libangelshark::{AcmRunner, Message, ParallelIterator};
+use log::error;
 use serde::Deserialize;
 use std::convert::Infallible;
 use warp::{
@@ -47,6 +48,11 @@ async fn remove_entries(entries: Entries, mut runner: AcmRunner) -> Result<impl 
         })
         .flatten()
         .collect();
+
+    // Log errors for tracking.
+    for error in &errors {
+        error!("deprov error: {}", error);
+    }
 
     Ok(reply::json(&errors))
 }
