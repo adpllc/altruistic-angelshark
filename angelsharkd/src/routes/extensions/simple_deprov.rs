@@ -51,7 +51,7 @@ async fn remove_entries(entries: Entries, mut runner: AcmRunner) -> Result<impl 
 
     // Log errors for tracking.
     for error in &errors {
-        error!("deprov error: {}", error);
+        error!("{}", error);
     }
 
     Ok(reply::json(&errors))
