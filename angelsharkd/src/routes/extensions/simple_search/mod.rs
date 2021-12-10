@@ -54,7 +54,7 @@ async fn refresh(haystack: Haystack) -> Result<impl Reply, Infallible> {
     // Run refresh as a background task and immediately return.
     tokio::spawn(async move {
         if let Err(e) = haystack.refresh() {
-            error!("{}", e.to_string()); // TODO: use logger
+            error!("{}", e.to_string());
         } else {
             info!("Search haystack refreshed.");
         }
