@@ -15,7 +15,22 @@ pub fn filter(runner: AcmRunner) -> impl Filter<Extract = impl Reply, Error = Re
         .and_then(move |entries: Entries| remove_entries(entries, runner.to_owned()))
 }
 
-async fn remove_entries(entries: Entries, runner: AcmRunner) -> Result<impl Reply, Infallible> {
+async fn remove_entries(entries: Entries, mut runner: AcmRunner) -> Result<impl Reply, Infallible> {
+    for entry in entries {
+        match entry {
+            Entry::StationUser { acm, ext } => {
+                runner.queue_input(&acm, &Message::new(&format!("clear amw all {}", ext)));
+                runner.queue_input(&acm, &Message::new(&format!("remove station {}", ext)));
+            }
+            Entry::AgentLoginId { acm, ext } => {
+                runner.queue_input(
+                    &acm,
+                    &Message::new(&format!("remove agent-loginID {}", ext)),
+                );
+            }
+        }
+    }
+    dbg!(&runner);
     Ok("")
 }
 
@@ -27,17 +42,4 @@ enum Entry {
     StationUser { acm: String, ext: String },
     #[serde(rename(deserialize = "agent-loginid"))]
     AgentLoginId { acm: String, ext: String },
-}
-
-impl From<Entry> for Vec<Message> {
-    fn from(entry: Entry) -> Self {
-        match entry {
-            Entry::StationUser { acm, ext } => {
-                vec![Message::new(&format!("clear amw all {}", ext))]
-            }
-            Entry::AgentLoginId { acm, ext } => {
-                todo!()
-            }
-        }
-    }
 }
