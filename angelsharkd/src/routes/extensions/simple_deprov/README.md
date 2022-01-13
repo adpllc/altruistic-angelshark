@@ -16,7 +16,7 @@ cargo build --bin angelsharkd --features simple_deprov ...
 
 ## `POST /extensions/deprov` Remove Objects
 
-The request type is TODO:
+The request type is as follows:
 
 ```json
 POST /extensions/deprov

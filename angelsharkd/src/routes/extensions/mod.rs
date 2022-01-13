@@ -1,6 +1,8 @@
 use crate::config::Config;
 use warp::{path, Filter, Rejection, Reply};
 
+#[cfg(feature = "simple_busy")]
+mod simple_busy;
 #[cfg(feature = "simple_deprov")]
 mod simple_deprov;
 #[cfg(feature = "simple_search")]
@@ -25,6 +27,12 @@ pub fn filter(config: &Config) -> impl Filter<Extract = impl Reply, Error = Reje
 
     #[cfg(feature = "simple_deprov")]
     let filters = filters.or(simple_deprov::filter(config.runner.clone()));
+
+    #[cfg(feature = "simple_busy")]
+    let filters = filters
+        .or(simple_busy::busy_filter(config.runner.to_owned()))
+        .or(simple_busy::release_filter(config.runner.to_owned()))
+        .or(simple_busy::toggle_filter(config.runner.to_owned()));
 
     path("extensions").and(filters)
 }
