@@ -1,5 +1,5 @@
 use libangelshark::{AcmRunner, Message, ParallelIterator};
-use log::error;
+use log::{error, info};
 use serde::Deserialize;
 use std::convert::Infallible;
 use warp::{
@@ -24,10 +24,12 @@ async fn remove_entries(entries: Entries, mut runner: AcmRunner) -> Result<impl 
     for entry in entries {
         match entry {
             Entry::StationUser { acm, ext } => {
+                runner.queue_input(&acm, &Message::new(&format!("list station {}", ext)));
                 runner.queue_input(&acm, &Message::new(&format!("clear amw all {}", ext)));
                 runner.queue_input(&acm, &Message::new(&format!("remove station {}", ext)));
             }
             Entry::AgentLoginId { acm, ext } => {
+                runner.queue_input(&acm, &Message::new(&format!("list agent-loginID {}", ext)));
                 runner.queue_input(
                     &acm,
                     &Message::new(&format!("remove agent-loginID {}", ext)),
@@ -42,7 +44,16 @@ async fn remove_entries(entries: Entries, mut runner: AcmRunner) -> Result<impl 
         .map(|(acm, output)| match output {
             Ok(messages) => messages
                 .into_iter()
-                .filter_map(|message| Some(format!("ACM {}: {}", acm.clone(), message.error?)))
+                .filter_map(|message| {
+                    if let Some(data) = message
+                        .datas
+                        .and_then(|d| Some(format!("{acm}\t{}", d.get(0)?.join("\t"))))
+                    {
+                        // if there was data (such as in lists), print it out
+                        info!("{data}");
+                    }
+                    Some(format!("ACM {}: {}", acm.clone(), message.error?))
+                })
                 .collect(),
             Err(error) => vec![format!("ACM {}: {}", acm, error)],
         })
