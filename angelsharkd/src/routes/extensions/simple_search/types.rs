@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context, Error};
 use libangelshark::{AcmRunner, Message, ParallelIterator};
-use log::error;
+use log::{error, info};
 use std::{
     collections::HashMap,
     env,
@@ -154,6 +154,18 @@ impl Haystack {
             })
             .flatten()
             .collect();
+
+        let ext_count = haystack.len();
+        let stat_count = haystack
+            .iter()
+            .filter(|e| e.get(1).map(String::as_str).unwrap_or_default() == "station-user")
+            .count();
+        let room_count = haystack
+            .iter()
+            .filter(|e| e.get(1).map(String::as_str).unwrap_or_default() == "station-user")
+            .filter(|e| !e.get(9).map(String::as_str).unwrap_or_default().is_empty())
+            .count();
+        info!("Downloaded {ext_count} fresh extension-types: {stat_count} station-users with {room_count} ROOMs.");
 
         // Overwrite shared haystack entries with new data.
         let mut lock = self
