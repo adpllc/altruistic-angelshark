@@ -185,9 +185,14 @@ impl Haystack {
         // Log found statistics.
         let total = haystack.len();
         info!("Downloaded {total} fresh extension-types.");
-        for (statistic, count) in counts {
-            info!("STATISTIC\t{statistic}\t{count}");
-        }
+        info!(
+            "{{ {} }}",
+            counts
+                .iter()
+                .map(|(stat, count)| format!("\"{stat}\": {count}"))
+                .collect::<Vec<_>>()
+                .join(",")
+        );
 
         // Overwrite shared haystack entries with new data.
         let mut lock = self
