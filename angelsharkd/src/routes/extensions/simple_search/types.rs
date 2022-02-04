@@ -155,17 +155,39 @@ impl Haystack {
             .flatten()
             .collect();
 
-        let ext_count = haystack.len();
-        let stat_count = haystack
-            .iter()
-            .filter(|e| e.get(1).map(String::as_str).unwrap_or_default() == "station-user")
-            .count();
-        let room_count = haystack
-            .iter()
-            .filter(|e| e.get(1).map(String::as_str).unwrap_or_default() == "station-user")
-            .filter(|e| !e.get(9).map(String::as_str).unwrap_or_default().is_empty())
-            .count();
-        info!("Downloaded {ext_count} fresh extension-types: {stat_count} station-users with {room_count} ROOMs.");
+        // Calculate some helpful statistics about downloaded extension data.
+        let mut counts = HashMap::new();
+        for entry in haystack.iter().filter_map(|entry| {
+            Some((
+                entry.get(8)?,
+                entry.get(1)? == "station-user",
+                !entry.get(9)?.is_empty(),
+            ))
+        }) {
+            let (acm, is_station, has_room) = entry;
+
+            match (is_station, has_room) {
+                (true, true) => {
+                    let stat_room = counts.entry(format!("{acm}_stat_room")).or_insert(0);
+                    *stat_room += 1;
+                }
+                (true, false) => {
+                    let stat_no_room = counts.entry(format!("{acm}_stat_noroom")).or_insert(0);
+                    *stat_no_room += 1;
+                }
+                _ => {
+                    let other = counts.entry(format!("{acm}_other")).or_insert(0);
+                    *other += 1;
+                }
+            }
+        }
+
+        // Log found statistics.
+        let total = haystack.len();
+        info!("Downloaded {total} fresh extension-types.");
+        for (statistic, count) in counts {
+            info!("STATISTIC\t{statistic}\t{count}");
+        }
 
         // Overwrite shared haystack entries with new data.
         let mut lock = self
