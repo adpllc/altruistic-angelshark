@@ -184,8 +184,8 @@ impl Haystack {
 
         // Log found statistics.
         let total = haystack.len();
-        info!("Downloaded {total} fresh extension-types.");
-        info!(
+        info!("Downloaded {total} fresh extension-types. Writing stats to STDERR.");
+        eprintln!(
             "{{ {} }}",
             counts
                 .iter()
