@@ -18,10 +18,11 @@ pub fn search_filter(
     haystack: Haystack,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     path("search")
+        .and(warp::query::<Query>())
         .and(post())
         .and(content_length_limit(1024 * 16))
         .and(json())
-        .and_then(move |needles: Needles| search(haystack.to_owned(), needles))
+        .and_then(move |query: Query, needles: Needles| search(haystack.to_owned(), needles, query))
         .with(with::header(header::PRAGMA, "no-cache"))
         .with(with::header(header::CACHE_CONTROL, "no-store, max-age=0"))
         .with(with::header(header::X_FRAME_OPTIONS, "DENY"))
@@ -38,9 +39,18 @@ pub fn refresh_filter(
 
 /// Runs the search request to find all needles in the haystack and converts the
 /// results into a reply.
-async fn search(haystack: Haystack, needles: Needles) -> Result<impl Reply, Infallible> {
+async fn search(
+    haystack: Haystack,
+    needles: Needles,
+    query: Query,
+) -> Result<impl Reply, Infallible> {
     match haystack.search(needles) {
-        Ok(matches) => Ok(reply::with_status(reply::json(&matches), StatusCode::OK)),
+        Ok(mut matches) => {
+            if let Some(limit) = query.limit {
+                matches = matches.into_iter().take(limit).collect();
+            }
+            Ok(reply::with_status(reply::json(&matches), StatusCode::OK))
+        }
         Err(e) => Ok(reply::with_status(
             reply::json(&e.to_string()),
             StatusCode::INTERNAL_SERVER_ERROR,

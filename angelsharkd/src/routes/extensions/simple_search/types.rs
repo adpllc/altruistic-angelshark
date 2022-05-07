@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Error};
 use libangelshark::{AcmRunner, Message, ParallelIterator};
 use log::{error, info};
+use serde::Deserialize;
 use std::{
     collections::HashMap,
     env,
@@ -12,6 +13,11 @@ const OSSI_STAT_NUMBER_FIELD: &str = "8005ff00";
 const OSSI_STAT_ROOM_FIELD: &str = "0031ff00";
 const OSSI_LIST_STAT_CMD: &str = "list station";
 const OSSI_LIST_EXT_CMD: &str = "list extension-type";
+
+#[derive(Deserialize)]
+pub struct Query {
+    pub limit: Option<usize>,
+}
 
 /// Collection of search terms
 pub type Needles = Vec<String>;

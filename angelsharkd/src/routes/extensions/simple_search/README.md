@@ -72,6 +72,13 @@ POST /extensions/search
 ]
 ```
 
+To reduce network utilization and memory usage on the client side for broad
+search terms that yield many matches, users may limit the number of results
+returned with a query parameter. Pass `?limit=number` to limit the number of
+returned results. For example, to truncate all search results to the first 100
+entries, send `/extensions/search?limit=100`. _Angelshark does not guarantee the
+order of results._
+
 ## Logging
 
 The `refresh` endpoint always returns successfully. Any errors encountered
