@@ -5,6 +5,7 @@ use serde::Deserialize;
 use std::{
     collections::HashMap,
     env,
+    pin::Pin,
     sync::{Arc, Mutex},
 };
 
@@ -28,14 +29,14 @@ type HaystackEntries = Vec<Vec<String>>;
 /// Represents a searchable, refreshable collection of ACM extension data.
 #[derive(Clone)]
 pub struct Haystack {
-    entries: Arc<Mutex<HaystackEntries>>,
+    entries: Arc<Mutex<Pin<Box<HaystackEntries>>>>,
     runner: AcmRunner,
 }
 
 impl Haystack {
     pub fn new(runner: AcmRunner) -> Self {
         Self {
-            entries: Arc::new(Mutex::new(Vec::new())),
+            entries: Arc::new(Mutex::new(Pin::new(Box::new(Vec::new())))),
             runner,
         }
     }
@@ -112,8 +113,7 @@ impl Haystack {
         // Log any ACM errors encountered
         for error in output
             .iter()
-            .map(|(_, messages)| messages)
-            .flatten()
+            .flat_map(|(_, messages)| messages)
             .filter_map(|m| m.error.as_ref())
         {
             error!("ACM error: {}", error);
@@ -122,7 +122,7 @@ impl Haystack {
         // Build a map of station number-to-rooms
         let rooms: HashMap<String, String> = output
             .iter()
-            .map(|(_, messages)| {
+            .flat_map(|(_, messages)| {
                 messages
                     .iter()
                     .filter(|message| message.command == OSSI_LIST_STAT_CMD)
@@ -130,13 +130,12 @@ impl Haystack {
                     .flatten()
                     .filter_map(|stat| Some((stat.get(0)?.to_owned(), stat.get(1)?.to_owned())))
             })
-            .flatten()
             .collect();
 
         // Build the haystack from the room map and extension-type output
         let haystack: HaystackEntries = output
             .into_iter()
-            .map(|(acm_name, messages)| {
+            .flat_map(|(acm_name, messages)| {
                 let rooms = &rooms;
                 let acm_name = format!("CM{}", acm_name);
 
@@ -148,8 +147,7 @@ impl Haystack {
                     .map(move |mut extension| {
                         let room = extension
                             .get(0)
-                            .map(|num| rooms.get(num))
-                            .flatten()
+                            .and_then(|num| rooms.get(num))
                             .map(|room| room.to_owned())
                             .unwrap_or_else(String::new);
 
@@ -158,7 +156,6 @@ impl Haystack {
                         extension
                     })
             })
-            .flatten()
             .collect();
 
         // Calculate some helpful statistics about downloaded extension data.
@@ -200,12 +197,21 @@ impl Haystack {
                 .join(",")
         );
 
+        let haystack = Pin::new(Box::new(haystack));
+
         // Overwrite shared haystack entries with new data.
         let mut lock = self
             .entries
             .lock()
             .map_err(|e| anyhow!(e.to_string()))
             .with_context(|| "Failed to get haystack inner data lock.")?;
+
+        // Note to developers: this is the reason for the haystack entries to be
+        // a pinned box. A box heap allocates and a pin guarantees the entries
+        // won't be moved from their existing memory location. This is done with
+        // the intent of speeding up this swap by preventing moves or
+        // pushing/popping of the stack with large data sets. There may be a
+        // better way to implement this.
         *lock = haystack;
         Ok(())
     }

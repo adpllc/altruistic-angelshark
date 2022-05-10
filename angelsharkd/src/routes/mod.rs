@@ -65,8 +65,7 @@ async fn handle_ossi(
     // Queue request inputs on runner.
     for (job_name, input) in requests
         .into_iter()
-        .map(|r| -> Vec<(String, Message)> { r.into() })
-        .flatten()
+        .flat_map(|r| -> Vec<(String, Message)> { r.into() })
     {
         runner.queue_input(&job_name, &input);
     }
