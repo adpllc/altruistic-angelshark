@@ -1,5 +1,5 @@
 use log::{error, info};
-use std::convert::Infallible;
+use std::{convert::Infallible, thread};
 pub use types::Haystack;
 use types::*;
 use warp::{
@@ -62,7 +62,8 @@ async fn search(
 /// refresh in the background.
 async fn refresh(haystack: Haystack) -> Result<impl Reply, Infallible> {
     // Run refresh as a background task and immediately return.
-    tokio::spawn(async move {
+    // TODO: notes on why this is the way it is
+    thread::spawn(move || {
         if let Err(e) = haystack.refresh() {
             error!("{}", e.to_string());
         } else {
