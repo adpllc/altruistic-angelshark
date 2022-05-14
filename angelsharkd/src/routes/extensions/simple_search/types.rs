@@ -27,6 +27,16 @@ pub type Needles = Vec<String>;
 type HaystackEntries = Vec<Vec<String>>;
 
 /// Represents a searchable, refreshable collection of ACM extension data.
+///
+/// Note: why use a Arc->Mutex->Pin->Box? The `Arc<Mutex<>>` is required because
+/// this haystack is borrowed across threads. I want all haystack refreshing to
+/// take place on a separate thread so that searches can still be executed while
+/// a background refresh takes place.
+///
+/// The `Pin<Box<>>` is used to ensure that the big block of new entries
+/// generated during a refresh is pinned to one allocated portion of the heap.
+/// This should prevent expensive moves or stack popping for that large chunk of
+/// data which goes unchanged until it is dropped at the next refresh.
 #[derive(Clone)]
 pub struct Haystack {
     entries: Arc<Mutex<Pin<Box<HaystackEntries>>>>,
@@ -66,8 +76,9 @@ impl Haystack {
 
     /// Refreshes the haystack data by running relevant commands on a runner,
     /// parsing the results, and updating the entries field with the fresh data.
-    /// TODO: Do we want simultaneous refreshes to be possible?
-    /// TODO: The entry generation could probably be simplified and the number of clones reduced.
+    /// Note: multiple simultaenous refresh calls could starve the Rayon thread
+    /// pool used by `libangelshark`. The entry generation could probably be
+    /// simplified and the number of clones reduced.
     pub fn refresh(&self) -> Result<(), Error> {
         let mut runner = self.runner.to_owned();
 
