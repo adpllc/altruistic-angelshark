@@ -1,7 +1,8 @@
 {
   "recommendations": [
     "bungcip.better-toml",
-    "matklad.rust-analyzer",
     "ms-vscode.cpptools",
+    "rust-lang.rust-analyzer",
+    "serayuzgur.crates"
   ]
 }
