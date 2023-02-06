@@ -1,6 +1,7 @@
 use crate::Message;
 use anyhow::{anyhow, Context, Result};
 use cached::{proc_macro::cached, Return, TimedCache};
+use log::info;
 use ssh2::{KeyboardInteractivePrompt, Prompt, Session, Stream};
 use std::{
     fmt::Debug,
@@ -117,12 +118,19 @@ impl Acm {
 
     /// Runs a given collection of [Message]s (OSSI commands) on the ACM and returns their resulting output.
     pub fn run(&self, inputs: &[Message]) -> Result<Vec<Message>> {
+        info!(
+            "begin commands for {:?} on thread {:?} of {:?}",
+            &self.addr,
+            rayon::current_thread_index(),
+            rayon::current_num_threads()
+        );
         let inputs: String = inputs.iter().map(Message::to_string).collect();
         let mut stream = self.open_stream(OSSI_TERM)?;
         write!(stream, "{}", inputs).with_context(|| "Failed to write inputs to OSSI stream.")?;
         stream
             .write_all(OSSI_LOGOFF)
             .with_context(|| "Failed to write LOGOFF to OSSI stream.")?;
+        info!("end command for {:?}", &self.addr);
         Message::from_output(stream)
     }
 
